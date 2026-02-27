@@ -1,0 +1,298 @@
+# =============================================================================
+# Security-Relevant HTTP Headers for Testing
+# justdastit DAST toolkit
+# =============================================================================
+# Categories: IP spoofing, host override, method override, URL rewrite,
+#             cache, debug, proxy, authentication, CORS, misc
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# IP SPOOFING / SOURCE ADDRESS OVERRIDE
+# -----------------------------------------------------------------------------
+X-Forwarded-For
+X-Forwarded-For: 127.0.0.1
+X-Forwarded-For: 127.0.0.1, 127.0.0.2
+X-Forwarded-For: 0.0.0.0
+X-Forwarded-For: localhost
+X-Forwarded-For: 10.0.0.1
+X-Forwarded-For: 172.16.0.1
+X-Forwarded-For: 192.168.1.1
+X-Forwarded-For: ::1
+True-Client-IP
+True-Client-IP: 127.0.0.1
+X-Real-IP
+X-Real-IP: 127.0.0.1
+X-Remote-IP
+X-Remote-IP: 127.0.0.1
+X-Remote-Addr
+X-Remote-Addr: 127.0.0.1
+X-Client-IP
+X-Client-IP: 127.0.0.1
+X-Originating-IP
+X-Originating-IP: 127.0.0.1
+X-Originating-IP: [127.0.0.1]
+X-ProxyUser-Ip
+X-ProxyUser-Ip: 127.0.0.1
+CF-Connecting-IP
+CF-Connecting-IP: 127.0.0.1
+Fastly-Client-IP
+Fastly-Client-IP: 127.0.0.1
+X-Cluster-Client-IP
+X-Cluster-Client-IP: 127.0.0.1
+X-Custom-IP-Authorization
+X-Custom-IP-Authorization: 127.0.0.1
+Forwarded
+Forwarded: for=127.0.0.1
+Forwarded: for=127.0.0.1;by=127.0.0.1;host=localhost
+X-Azure-ClientIP
+X-Azure-ClientIP: 127.0.0.1
+X-Akamai-Client-IP
+X-Backend-Host
+X-Backend-Host: 127.0.0.1
+Via
+Via: 1.1 localhost
+X-Coming-From
+X-Coming-From: 127.0.0.1
+X-Connecting-IP
+X-Connecting-IP: 127.0.0.1
+
+# -----------------------------------------------------------------------------
+# HOST HEADER OVERRIDE / INJECTION
+# -----------------------------------------------------------------------------
+X-Forwarded-Host
+X-Forwarded-Host: evil.com
+X-Forwarded-Host: localhost
+X-Host
+X-Host: evil.com
+X-Host: localhost
+X-Forwarded-Server
+X-Forwarded-Server: evil.com
+X-Forwarded-Server: localhost
+X-HTTP-Host-Override
+X-HTTP-Host-Override: evil.com
+Forwarded: host=evil.com
+X-Original-Host
+X-Original-Host: evil.com
+X-Proxy-Host
+X-Proxy-Host: evil.com
+X-Forwarded-Port
+X-Forwarded-Port: 443
+X-Forwarded-Port: 4443
+X-Forwarded-Port: 8080
+X-Forwarded-Port: 8443
+
+# -----------------------------------------------------------------------------
+# URL / PATH REWRITE
+# -----------------------------------------------------------------------------
+X-Original-URL
+X-Original-URL: /admin
+X-Original-URL: /admin/dashboard
+X-Rewrite-URL
+X-Rewrite-URL: /admin
+X-Rewrite-URL: /admin/dashboard
+X-Override-URL
+X-Override-URL: /admin
+X-Forwarded-Path
+X-Forwarded-Prefix
+X-Forwarded-Prefix: /admin
+X-Original-Path
+
+# -----------------------------------------------------------------------------
+# HTTP METHOD OVERRIDE
+# -----------------------------------------------------------------------------
+X-HTTP-Method-Override
+X-HTTP-Method-Override: PUT
+X-HTTP-Method-Override: DELETE
+X-HTTP-Method-Override: PATCH
+X-HTTP-Method-Override: OPTIONS
+X-HTTP-Method-Override: TRACE
+X-HTTP-Method-Override: CONNECT
+X-HTTP-Method
+X-HTTP-Method: PUT
+X-HTTP-Method: DELETE
+X-Method-Override
+X-Method-Override: PUT
+X-Method-Override: DELETE
+
+# -----------------------------------------------------------------------------
+# PROTOCOL / SCHEME OVERRIDE
+# -----------------------------------------------------------------------------
+X-Forwarded-Proto
+X-Forwarded-Proto: https
+X-Forwarded-Proto: http
+X-Forwarded-Scheme
+X-Forwarded-Scheme: https
+X-Forwarded-Scheme: http
+X-Forwarded-Protocol
+X-URL-Scheme
+X-URL-Scheme: https
+Front-End-Https
+Front-End-Https: on
+X-Forwarded-Ssl
+X-Forwarded-Ssl: on
+
+# -----------------------------------------------------------------------------
+# DEBUG / TRACE / PROFILING
+# -----------------------------------------------------------------------------
+X-Debug
+X-Debug: 1
+X-Debug: true
+X-Debug-Mode
+X-Debug-Mode: 1
+X-Debug-Token
+X-Debug-Token: test
+X-Forwarded-Debug
+X-Forwarded-Debug: 1
+X-Requested-With
+X-Requested-With: XMLHttpRequest
+X-Requested-With: com.android.browser
+X-Trace
+X-Trace: 1
+X-Profile
+X-Profile: 1
+X-Verbose
+X-Verbose: 1
+X-Enable-Debug
+X-Enable-Debug: 1
+Debug
+Debug: 1
+Debug: true
+Trace
+Trace: 1
+
+# -----------------------------------------------------------------------------
+# CACHE CONTROL / POISONING
+# -----------------------------------------------------------------------------
+X-Forwarded-For
+X-Forwarded-Host
+X-Original-URL
+X-Cache
+X-Cache-Key
+X-Cache-Hash
+X-No-Cache
+X-No-Cache: 1
+Cache-Control
+Cache-Control: no-cache
+Cache-Control: no-store
+Pragma
+Pragma: no-cache
+X-Cache-Bypass
+X-Cache-Bypass: 1
+Surrogate-Control
+Surrogate-Control: no-store
+X-Purge
+X-Purge: 1
+X-Refresh
+X-Refresh: 1
+CDN-Loop
+CDN-Loop: cloudflare
+
+# -----------------------------------------------------------------------------
+# CONTENT / ENCODING HEADERS
+# -----------------------------------------------------------------------------
+Content-Type
+Content-Type: application/json
+Content-Type: application/xml
+Content-Type: text/xml
+Content-Type: application/x-www-form-urlencoded
+Content-Type: multipart/form-data
+Accept
+Accept: application/json
+Accept: application/xml
+Accept: text/html
+Accept: */*
+Accept-Language
+Accept-Encoding
+Accept-Charset
+Transfer-Encoding
+Transfer-Encoding: chunked
+Content-Encoding
+Content-Encoding: gzip
+Content-Length
+Content-Length: 0
+
+# -----------------------------------------------------------------------------
+# AUTHENTICATION / AUTHORIZATION HEADERS
+# -----------------------------------------------------------------------------
+Authorization
+Authorization: Bearer test
+Authorization: Basic dGVzdDp0ZXN0
+X-API-Key
+X-Api-Key
+X-Auth-Token
+X-CSRF-Token
+X-XSRF-Token
+X-Access-Token
+X-Session-Token
+X-JWT-Token
+Cookie
+Set-Cookie
+X-Forwarded-User
+X-Forwarded-User: admin
+X-Forwarded-Email
+X-Forwarded-Email: admin@localhost
+X-Forwarded-Groups
+X-Remote-User
+X-Remote-User: admin
+X-Authenticated-User
+X-Authenticated-User: admin
+Proxy-Authorization
+
+# -----------------------------------------------------------------------------
+# CORS-RELATED HEADERS
+# -----------------------------------------------------------------------------
+Origin
+Origin: null
+Origin: http://evil.com
+Origin: https://evil.com
+Access-Control-Request-Method
+Access-Control-Request-Method: GET
+Access-Control-Request-Method: POST
+Access-Control-Request-Method: PUT
+Access-Control-Request-Headers
+Access-Control-Request-Headers: X-Custom-Header
+Referer
+Referer: http://evil.com
+
+# -----------------------------------------------------------------------------
+# USER AGENT / CLIENT IDENTIFICATION
+# -----------------------------------------------------------------------------
+User-Agent
+User-Agent: Mozilla/5.0
+User-Agent: Googlebot/2.1
+User-Agent: curl/7.68.0
+User-Agent: python-requests/2.25.1
+User-Agent: Wget/1.20
+User-Agent: sqlmap/1.6
+X-Device-Id
+X-Device-Type
+X-App-Version
+X-Platform
+
+# -----------------------------------------------------------------------------
+# MISCELLANEOUS SECURITY-RELEVANT HEADERS
+# -----------------------------------------------------------------------------
+X-Requested-By
+X-Requested-By: XMLHttpRequest
+X-Request-Id
+X-Correlation-Id
+X-Trace-Id
+X-Transaction-Id
+X-Amz-Date
+X-Amz-Security-Token
+X-Azure-Token
+X-Google-Cloud-Token
+X-WAF-Bypass
+X-WAF-Bypass: 1
+X-Scanner
+X-Vulnerability-Test
+X-Custom-Header
+X-Custom-Header: test
+Proxy
+Proxy: http://127.0.0.1
+X-Proxy-URL
+X-Proxy-URL: http://127.0.0.1
+Destination
+Destination: http://evil.com
+X-Middleware-Rewrite
+X-Middleware-Rewrite: /admin

