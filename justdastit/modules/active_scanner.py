@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import re
 import time
 from dataclasses import dataclass, field
@@ -72,6 +73,9 @@ COMMAND_INJECTION_PROBES = [
 XSS_CANARY = "jdt9x<xss>7q2m"
 XSS_REFLECTED_PATTERN = re.escape(XSS_CANARY)
 
+# Stored XSS canary prefix — each injection gets a unique suffix
+STORED_XSS_PREFIX = "jdt_sxss_"
+
 # SSRF payloads targeting cloud metadata + internal services
 SSRF_PAYLOADS = [
     ("http://169.254.169.254/latest/meta-data/", "aws", ["ami-id", "instance-id", "iam"]),
@@ -90,6 +94,39 @@ BLIND_TIMING_SLEEP = 7         # sleep payload uses 7s
 # ---------------------------------------------------------------------------
 # Param name sanitizer — drops HTML-entity artifacts like "amp;page"
 # ---------------------------------------------------------------------------
+
+# Regex for values that look like resource identifiers
+_ID_NUMERIC_RE = re.compile(r"^\d{1,10}$")
+_ID_SHORT_ALPHANUM_RE = re.compile(r"^[a-zA-Z0-9_-]{1,32}$")
+_ID_UUID_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.IGNORECASE
+)
+
+
+def _looks_like_id(value: str) -> str | None:
+    """Return the ID type if value looks like a resource identifier, else None.
+
+    Returns "numeric", "uuid", or "alphanum" for testable values.
+    Skips long text, booleans, dates, and other non-ID values.
+    """
+    v = value.strip()
+    if not v:
+        return None
+    # Skip booleans and common non-ID tokens
+    if v.lower() in ("true", "false", "yes", "no", "null", "none", ""):
+        return None
+    if _ID_NUMERIC_RE.match(v):
+        return "numeric"
+    if _ID_UUID_RE.match(v):
+        return "uuid"
+    # Short alphanumeric — could be a slug/hash ID, but skip if too generic
+    if _ID_SHORT_ALPHANUM_RE.match(v) and len(v) >= 2:
+        # Skip things that look like common param values (sort directions, etc.)
+        if v.lower() in ("asc", "desc", "get", "post", "put", "delete", "json", "xml", "html", "css"):
+            return None
+        return "alphanum"
+    return None
+
 
 def _normalize_url(url: str) -> str:
     """Unescape HTML entities in URLs before parsing.
@@ -184,6 +221,8 @@ DAST_CATEGORIES = [
     "SSRF",
     "HTTP Method Tampering",
     "Form Injection",
+    "IDOR/BOLA",
+    "Stored XSS",
 ]
 
 
@@ -341,6 +380,7 @@ class ActiveScanner:
             await self._test_command_injection(url, param_name, parsed, params, baseline_body, callback)
             await self._test_open_redirect(url, param_name, parsed, params, callback)
             await self._test_ssrf(url, param_name, parsed, params, baseline_body, callback)
+            await self._test_idor(url, param_name, parsed, params, baseline_body, baseline_resp, callback)
 
         # Run plugins
         base_req = HttpRequest(method="GET", url=url)
@@ -505,6 +545,9 @@ class ActiveScanner:
                             request=req,
                             response=resp,
                         ), callback)
+
+        # Stored XSS — inject canaries then check for persistence
+        await self._test_stored_xss(form, inputs, callback)
 
     # ------------------------------------------------------------------
     # Injection helpers
@@ -802,6 +845,201 @@ class ActiveScanner:
                     response=resp,
                 ), callback)
                 return
+
+    # ------------------------------------------------------------------
+    # IDOR / BOLA
+    # ------------------------------------------------------------------
+
+    async def _test_idor(
+        self, url: str, param: str, parsed: object, params: dict,
+        baseline_body: str, baseline_resp: HttpResponse,
+        callback: Optional[Callable] = None,
+    ) -> None:
+        """Test for Insecure Direct Object Reference by probing adjacent IDs."""
+        original_values = params.get(param, [""])
+        original_value = original_values[0] if original_values else ""
+        id_type = _looks_like_id(original_value)
+        if id_type is None:
+            return
+
+        # Generate probe values based on ID type
+        probes: list[str] = []
+        if id_type == "numeric":
+            n = int(original_value)
+            probes = [str(n + 1), str(max(1, n - 1)), str(n + 1000)]
+        elif id_type == "uuid":
+            # Swap one hex char in the last segment
+            parts = original_value.split("-")
+            last = parts[-1]
+            # Flip the first hex char
+            flipped = hex((int(last[0], 16) + 1) % 16)[2:] + last[1:]
+            parts[-1] = flipped
+            probes = ["-".join(parts)]
+        elif id_type == "alphanum":
+            # Try incrementing last char
+            if original_value[-1].isdigit():
+                probes = [original_value[:-1] + str((int(original_value[-1]) + 1) % 10)]
+            else:
+                probes = [original_value[:-1] + ("b" if original_value[-1] != "b" else "c")]
+
+        self._dast["IDOR/BOLA"].record(params=1)
+
+        for probe_value in probes:
+            if probe_value == original_value:
+                continue
+            req, resp = await self._inject_and_send(url, param, parsed, params, probe_value)
+            self._dast["IDOR/BOLA"].record(probes=1)
+
+            if resp.status_code in (401, 403, 404):
+                # Access control enforced — not vulnerable
+                continue
+
+            if resp.status_code != 200:
+                continue
+
+            probe_body = resp.body.decode("utf-8", errors="replace") if resp.body else ""
+
+            # Both responses must have meaningful content
+            if len(probe_body) < 50 or len(baseline_body) < 50:
+                continue
+
+            # Bodies must differ — if identical, we got the same resource or a generic page
+            if probe_body == baseline_body:
+                continue
+
+            # Content similarity check: require at least 10% difference
+            # Use length + first 500 chars as a quick heuristic
+            len_ratio = min(len(probe_body), len(baseline_body)) / max(len(probe_body), len(baseline_body)) if max(len(probe_body), len(baseline_body)) > 0 else 1.0
+            prefix_match = probe_body[:500] == baseline_body[:500]
+            if len_ratio > 0.9 and prefix_match:
+                # Too similar — likely same template with minor dynamic content
+                continue
+
+            # Size must be within ±20% of baseline (same type of resource)
+            if len_ratio < 0.8:
+                # Wildly different sizes — might be an error page vs real content
+                continue
+
+            self._dast["IDOR/BOLA"].findings_count += 1
+            self._add_finding(Finding(
+                title=f"IDOR/BOLA via '{param}'",
+                severity=Severity.HIGH,
+                url=url,
+                detail=(
+                    f"Accessing a different resource by changing '{param}' from '{original_value}' "
+                    f"to '{probe_value}' returned 200 with different content "
+                    f"(baseline {len(baseline_body)}B vs probe {len(probe_body)}B). "
+                    f"This may indicate unauthorized access to another user's data."
+                ),
+                evidence=f"Original ID: {original_value} → Probe ID: {probe_value} (status 200, different body)",
+                cwe="CWE-639",
+                request=req,
+                response=resp,
+            ), callback)
+            return  # One finding per param is enough
+
+    # ------------------------------------------------------------------
+    # Stored XSS
+    # ------------------------------------------------------------------
+
+    async def _test_stored_xss(
+        self,
+        form: dict,
+        inputs: list[dict],
+        callback: Optional[Callable] = None,
+    ) -> None:
+        """Inject unique canaries into form text inputs, then check if they persist."""
+        action = form.get("action", "")
+        found_on = form.get("found_on", "")
+        method = form.get("method", "GET").upper()
+
+        # Only test text-like inputs
+        text_inputs = [
+            i for i in inputs
+            if i.get("name")
+            and i.get("type", "text").lower() in ("text", "textarea", "search", "url", "tel", "email", "hidden", "")
+        ]
+        if not text_inputs:
+            return
+
+        self._dast["Stored XSS"].urls_tested += 1
+
+        for inp in text_inputs:
+            name = inp.get("name", "")
+            canary = f"{STORED_XSS_PREFIX}{os.urandom(8).hex()}"
+
+            # Re-fetch form for fresh CSRF tokens before each injection
+            fresh = await self._fetch_fresh_form(form)
+            active_form = fresh if fresh is not None else form
+            active_inputs = active_form.get("inputs", inputs)
+
+            # Build form data with canary in target field
+            form_data = {
+                i.get("name", ""): i.get("value", "test")
+                for i in active_inputs if i.get("name")
+            }
+            form_data[name] = canary
+
+            # Inject
+            if method == "POST":
+                body = urlencode(form_data).encode()
+                inject_req = HttpRequest(
+                    method="POST", url=action, body=body,
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
+                )
+            else:
+                query = urlencode(form_data)
+                inject_url = urlunparse(urlparse(action)._replace(query=query))
+                inject_req = HttpRequest(method="GET", url=inject_url)
+
+            inject_resp = await self.engine.send(inject_req)
+            self._requests_sent += 1
+            self._dast["Stored XSS"].record(probes=1, params=1)
+
+            # Retrieve phase — check pages where the canary might persist
+            check_urls: list[str] = []
+            if found_on:
+                check_urls.append(found_on)
+            if action and action != found_on:
+                check_urls.append(action)
+
+            # Also check sibling pages that share the same path prefix
+            action_parsed = urlparse(action)
+            action_dir = action_parsed.path.rsplit("/", 1)[0] if "/" in action_parsed.path else ""
+            if action_dir:
+                for sitemap_url in self.db.get_sitemap_urls():
+                    sp = urlparse(sitemap_url)
+                    if sp.netloc == action_parsed.netloc and sp.path.startswith(action_dir) and sitemap_url not in check_urls:
+                        check_urls.append(sitemap_url)
+                        if len(check_urls) >= 10:
+                            break
+
+            for check_url in check_urls:
+                try:
+                    check_req = HttpRequest(method="GET", url=check_url)
+                    check_resp = await self.engine.send(check_req)
+                    self._requests_sent += 1
+                except Exception:
+                    continue
+
+                check_body = check_resp.body.decode("utf-8", errors="replace") if check_resp.body else ""
+                if canary in check_body:
+                    self._dast["Stored XSS"].findings_count += 1
+                    self._add_finding(Finding(
+                        title=f"Stored XSS via form input '{name}'",
+                        severity=Severity.HIGH,
+                        url=action,
+                        detail=(
+                            f"Canary '{canary}' injected into form input '{name}' on {action} "
+                            f"was found persisted on {check_url}. "
+                            f"This indicates stored/persistent XSS."
+                        ),
+                        evidence=f"Canary: {canary} found on {check_url}",
+                        cwe="CWE-79",
+                        request=inject_req,
+                        response=check_resp,
+                    ), callback)
+                    break  # One finding per input is enough
 
     # ------------------------------------------------------------------
     # HTTP Method Tampering

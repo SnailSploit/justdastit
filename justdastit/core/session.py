@@ -126,6 +126,13 @@ class SessionManager:
 
         lc = self._login_config
 
+        # Snapshot existing cookies so we can restore any that the new login
+        # response doesn't explicitly set (e.g. DVWA's "security=low" cookie
+        # which is only set once, not on every login).
+        pre_auth_cookies: dict[str, str] = {}
+        for name, value in self._jar.items():
+            pre_auth_cookies[name] = value
+
         # Step 1: GET login page to capture CSRF token + initial cookies
         get_resp = await client.get(lc.url, cookies=self._jar)
         async with self._lock:
@@ -161,12 +168,26 @@ class SessionManager:
             follow_redirects=True,
         )
 
+        # Collect cookie names explicitly set by the login response
+        new_cookie_names: set[str] = set()
+        new_cookie_names.update(post_resp.cookies.keys())
+        if hasattr(post_resp, "history"):
+            for r in post_resp.history:
+                new_cookie_names.update(r.cookies.keys())
+
         async with self._lock:
             self._jar.update(post_resp.cookies)
             # Also capture cookies from redirect chain
             if hasattr(post_resp, "history"):
                 for r in post_resp.history:
                     self._jar.update(r.cookies)
+
+            # Restore pre-auth cookies that weren't replaced by the login response.
+            # This preserves app-level cookies (e.g. security=low) that are only
+            # set once and not re-issued on subsequent logins.
+            for name, value in pre_auth_cookies.items():
+                if name not in new_cookie_names:
+                    self._jar.set(name, value)
 
         self._authenticated = True
         return post_resp.status_code == 200
