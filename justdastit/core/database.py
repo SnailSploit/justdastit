@@ -293,5 +293,12 @@ class ProjectDB:
         self.conn.execute("DELETE FROM findings")
         self.conn.commit()
 
+    def reset(self) -> None:
+        """Drop all data from every table. Used at autopilot startup to avoid
+        stale sitemap/form/finding entries from previous runs."""
+        for table in ("requests", "responses", "findings", "sitemap", "forms"):
+            self.conn.execute(f"DELETE FROM {table}")  # noqa: S608 — table names are hardcoded
+        self.conn.commit()
+
     def close(self) -> None:
         self.conn.close()

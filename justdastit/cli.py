@@ -747,6 +747,10 @@ def autopilot(ctx: click.Context, url: str, depth: int, threads: int, wordlist: 
     """
     config, db = _load_config(ctx)
 
+    # Start fresh — stale data from previous runs causes session check failures
+    # and pollutes results with outdated sitemap/form entries.
+    db.reset()
+
     # Auto-detect scope from URL
     if scope:
         config.scope = ScopeRule(include_patterns=[scope])
