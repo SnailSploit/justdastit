@@ -515,3 +515,21 @@ justdastit/
 MIT — by [SnailSploit](https://snailsploit.com)
 
 Built for the security community. Star the repo if it saves you $449/year.
+
+<!-- snailsploit-backlink:start -->
+
+---
+
+## 📚 Documentation & Author
+
+This project's full writeup, methodology, and related research lives at:
+
+**[https://snailsploit.com/tools](https://snailsploit.com/tools)**
+
+Created by **Kai Aizen** — independent offensive security researcher.
+
+[snailsploit.com](https://snailsploit.com) · [Research](https://snailsploit.com/research) · [Frameworks](https://snailsploit.com/frameworks) · [GitHub](https://github.com/SnailSploit) · [LinkedIn](https://linkedin.com/in/kaiaizen) · [ResearchGate](https://www.researchgate.net/profile/Kai-Aizen-2) · [X/Twitter](https://x.com/SnailSploit)
+
+> *Same attack. Different substrate.*
+
+<!-- snailsploit-backlink:end -->
